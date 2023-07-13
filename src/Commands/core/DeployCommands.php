@@ -17,6 +17,7 @@ class DeployCommands extends DrushCommands implements SiteAliasManagerAwareInter
      * Run several commands after performing a code deployment.
      *
      * @command deploy
+     * @option no-maintenance Do not set the maintenance_mode during the deploy process.
      *
      * @usage drush deploy -v -y
      *   Run updates with verbose logging and accept all prompts.
@@ -27,15 +28,19 @@ class DeployCommands extends DrushCommands implements SiteAliasManagerAwareInter
      *
      * @throws \Exception
      */
-    public function deploy(): void
+    public function deploy($options = ['no-maintenance' => false]): void
     {
         $self = $this->siteAliasManager()->getSelf();
         $redispatchOptions = Drush::redispatchOptions();
         $manager = $this->processManager();
 
         $this->logger()->notice("Database updates start.");
-        $options = ['no-cache-clear' => true];
-        $process = $manager->drush($self, 'updatedb', [], $options + $redispatchOptions);
+
+        $updb_options = [
+            'no-cache-clear' => true,
+            'no-maintenance' => $options['no-maintenance'],
+        ];
+        $process = $manager->drush($self, 'updatedb', [], $updb_options + $redispatchOptions);
         $process->mustRun($process->showRealtime());
 
         $this->cacheRebuild($manager, $self, $redispatchOptions);

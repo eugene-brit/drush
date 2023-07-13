@@ -29,12 +29,13 @@ class UpdateDBCommands extends DrushCommands implements SiteAliasManagerAwareInt
      * @command updatedb
      * @option cache-clear Clear caches upon completion.
      * @option post-updates Run post updates after hook_update_n.
+     * @option no-maintenance Do not set the maintenance_mode during the upgrade process.
      * @bootstrap full
      * @topics docs:deploy
      * @kernel update
      * @aliases updb
      */
-    public function updatedb($options = ['cache-clear' => true, 'post-updates' => true]): int
+    public function updatedb($options = ['cache-clear' => true, 'post-updates' => true, 'no-maintenance' => false]): int
     {
         $this->cache_clear = $options['cache-clear'];
         require_once DRUPAL_ROOT . '/core/includes/install.inc';
@@ -413,10 +414,13 @@ class UpdateDBCommands extends DrushCommands implements SiteAliasManagerAwareInt
             }
         }
 
-        $original_maint_mode = \Drupal::service('state')->get('system.maintenance_mode');
-        if (!$original_maint_mode) {
-            \Drupal::service('state')->set('system.maintenance_mode', true);
-            $operations[] = ['\Drush\Commands\core\UpdateDBCommands::restoreMaintMode', [false]];
+        // Set the maintenance_mode only if it's not disabled.
+        if (empty($options['no-maintenance'])) {
+            $original_maint_mode = \Drupal::service('state')->get('system.maintenance_mode');
+            if (!$original_maint_mode) {
+                \Drupal::service('state')->set('system.maintenance_mode', TRUE);
+                $operations[] = ['\Drush\Commands\core\UpdateDBCommands::restoreMaintMode', [FALSE]];
+            }
         }
 
         $batch['operations'] = $operations;
