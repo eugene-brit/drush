@@ -36,6 +36,8 @@ class DeployCommands extends DrushCommands implements SiteAliasManagerAwareInter
 
         $this->logger()->notice("Database updates start.");
 
+        // Remove the 'no-maintenance' option for other commands except the updb.
+        unset($redispatchOptions['no-maintenance']);
         $updb_options = [
             'no-cache-clear' => true,
             'no-maintenance' => $options['no-maintenance'],
